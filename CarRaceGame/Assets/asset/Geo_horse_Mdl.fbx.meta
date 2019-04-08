@@ -1,0 +1,131 @@
+fileFormatVersion: 2
+guid: 4aa77e5d6cd7bcd4db3ea8208a3ecf0e
+ModelImporter:
+  serializedVersion: 23
+  fileIDToRecycleName:
+    100000: //RootNode
+    100002: geo_horseBody_Mdl
+    100004: geo_wheelBackLeft_Mdl
+    100006: geo_wheelBackRight_Mdl
+    100008: geo_wheelFrontLeft_Mdl
+    100010: geo_wheelFrontRight_Mdl
+    100012: geo_horse_Mdl
+    100014: geo_horseTail_Mdl
+    400000: //RootNode
+    400002: geo_horseBody_Mdl
+    400004: geo_wheelBackLeft_Mdl
+    400006: geo_wheelBackRight_Mdl
+    400008: geo_wheelFrontLeft_Mdl
+    400010: geo_wheelFrontRight_Mdl
+    400012: geo_horse_Mdl
+    400014: geo_horseTail_Mdl
+    2100000: geo_horse_tex
+    2100002: lambert2
+    2100004: lambert1
+    2300000: geo_horseBody_Mdl
+    2300002: geo_wheelBackLeft_Mdl
+    2300004: geo_wheelBackRight_Mdl
+    2300006: geo_wheelFrontLeft_Mdl
+    2300008: geo_wheelFrontRight_Mdl
+    2300010: geo_horse_Mdl
+    2300012: geo_horseTail_Mdl
+    3300000: geo_horseBody_Mdl
+    3300002: geo_wheelBackLeft_Mdl
+    3300004: geo_wheelBackRight_Mdl
+    3300006: geo_wheelFrontLeft_Mdl
+    3300008: geo_wheelFrontRight_Mdl
+    3300010: geo_horse_Mdl
+    3300012: geo_horseTail_Mdl
+    4300000: geo_wheelBackLeft_Mdl
+    4300002: geo_wheelFrontLeft_Mdl
+    4300004: geo_wheelFrontRight_Mdl
+    4300006: geo_horseBody_Mdl
+    4300008: geo_wheelBackRight_Mdl
+    4300010: geo_horseTail_Mdl
+    4300012: geo_horse_Mdl
+  externalObjects: {}
+  materials:
+    importMaterials: 1
+    materialName: 0
+    materialSearch: 1
+    materialLocation: 1
+  animations:
+    legacyGenerateAnimations: 4
+    bakeSimulation: 0
+    resampleCurves: 1
+    optimizeGameObjects: 0
+    motionNodeName: 
+    rigImportErrors: 
+    rigImportWarnings: 
+    animationImportErrors: 
+    animationImportWarnings: 
+    animationRetargetingWarnings: 
+    animationDoRetargetingWarnings: 0
+    importAnimatedCustomProperties: 0
+    importConstraints: 0
+    animationCompression: 1
+    animationRotationError: 0.5
+    animationPositionError: 0.5
+    animationScaleError: 0.5
+    animationWrapMode: 0
+    extraExposedTransformPaths: []
+    extraUserProperties: []
+    clipAnimations: []
+    isReadable: 1
+  meshes:
+    lODScreenPercentages: []
+    globalScale: 1
+    meshCompression: 0
+    addColliders: 0
+    useSRGBMaterialColor: 1
+    importVisibility: 1
+    importBlendShapes: 1
+    importCameras: 1
+    importLights: 1
+    swapUVChannels: 0
+    generateSecondaryUV: 0
+    useFileUnits: 1
+    optimizeMeshForGPU: 1
+    keepQuads: 0
+    weldVertices: 1
+    preserveHierarchy: 0
+    indexFormat: 0
+    secondaryUVAngleDistortion: 8
+    secondaryUVAreaDistortion: 15.000001
+    secondaryUVHardAngle: 88
+    secondaryUVPackMargin: 4
+    useFileScale: 1
+    previousCalculatedGlobalScale: 1
+    hasPreviousCalculatedGlobalScale: 0
+  tangentSpace:
+    normalSmoothAngle: 60
+    normalImportMode: 0
+    tangentImportMode: 3
+    normalCalculationMode: 4
+    legacyComputeAllNormalsFromSmoothingGroupsWhenMeshHasBlendShapes: 0
+    blendShapeNormalImportMode: 1
+    normalSmoothingSource: 0
+  importAnimation: 1
+  copyAvatar: 0
+  humanDescription:
+    serializedVersion: 2
+    human: []
+    skeleton: []
+    armTwist: 0.5
+    foreArmTwist: 0.5
+    upperLegTwist: 0.5
+    legTwist: 0.5
+    armStretch: 0.05
+    legStretch: 0.05
+    feetSpacing: 0
+    rootMotionBoneName: 
+    hasTranslationDoF: 0
+    hasExtraRoot: 0
+    skeletonHasParents: 1
+  lastHumanDescriptionAvatarSource: {instanceID: 0}
+  animationType: 0
+  humanoidOversampling: 1
+  additionalBone: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

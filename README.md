@@ -19,4 +19,4 @@ This project is a 3D race game developed on Unity, with a team of 2 programers a
 
 ## Build Instructions
 
-The build is on the Folder "Build"
+There is no build in this repository, use Unity3d to generate a build

@@ -13,6 +13,9 @@ This project is a 3D race game developed on Unity, with a team of 2 programers a
 
 - Improving our skills on Unity and collaboration with artists
 
+###### _integration of the artists work_
+![alt text](https://github.com/BenjaminViranin/Race-Game/blob/master/Screenshots/Gameplay-light.gif)
+
 ## Engine used
 
 - Unity3d

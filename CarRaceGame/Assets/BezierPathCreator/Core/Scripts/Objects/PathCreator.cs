@@ -1,13 +1,19 @@
 ﻿using UnityEngine;
 using System.Collections.Generic;
+using UnityEngine.Networking;
 
 namespace PathCreation
 {
     public class PathCreator : MonoBehaviour
     {
-
         /// This class stores data for the path editor, and provides accessors to get the current vertex and bezier path.
         /// Attach to a GameObject to create a new path editor.
+
+        public string Name;
+        public bool IsSripted;
+        public Vector3 StartPosition;
+        public Quaternion StartRotation;
+        public Quaternion EndRotation;
 
         public event System.Action pathUpdated;
 

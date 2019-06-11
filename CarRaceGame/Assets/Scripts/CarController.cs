@@ -2,10 +2,10 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-[RequireComponent(typeof(Rigidbody))]
+[RequireComponent(typeof(Rigidbody), typeof(CapsuleCollider))]
 public class CarController : MonoBehaviour
 {
-    [SerializeField] protected float _gravity = 1f;
+    [SerializeField] protected float _gravityFactor = 10f;
 
     [Header("Car Properties")]
     [SerializeField] protected float _maxSpeed = 30f;
@@ -38,65 +38,31 @@ public class CarController : MonoBehaviour
     public bool m_isDrifting = false;
 
     public bool m_isGrounded;
+    public bool m_isOnRamp;
 
-    public Vector3 data;
+    public Vector3 m_gravityVector;
+    public Vector3 m_malusBuffer;
+    public float m_colliderHeightAtStart;
 
+    public float m_currentGravityFactor;
 
-    protected void Start()
+    public void Start()
     {
         m_rigidbody = GetComponent<Rigidbody>();
-        //m_distanceToFloor = GetComponent<BoxCollider>().size.y * 0.5f;
-        m_distanceToFloor = GetComponent<CapsuleCollider>().radius * 0.5f + 0.1f;
+        m_distanceToFloor = GetComponent<CapsuleCollider>().radius * transform.localScale.y;
+        m_colliderHeightAtStart = GetComponent<CapsuleCollider>().height;
+        m_rigidbody.freezeRotation = true;
+        m_rigidbody.useGravity = false;
+        m_currentGravityFactor = _gravityFactor * 0.5f;
     }
 
-    void FixedUpdate()
+    protected void FixedUpdate()
     {
-        RaycastHit hit;
-        if (Physics.Raycast(transform.position, -transform.up, out hit, Mathf.Infinity))
-        {
-            m_isGrounded = hit.distance <= m_distanceToFloor;
+        m_gravityVector.Set(0, 0, 0);
 
-            //transform.eulerAngles = new Vector3(Mathf.Lerp(transform.eulerAngles.x, hit.transform.eulerAngles.x, Time.fixedDeltaTime), transform.eulerAngles.y, 0);
-            if (hit.collider.gameObject.CompareTag("Ramp"))
-            {
-                //Debug.Log("Oui");
-            }
+        AlignToGround();
 
-            float lerpFirstValue = 0;
-
-            if (hit.transform.eulerAngles.x > 180f)
-            {
-                if (transform.eulerAngles.x < 180f)
-                {
-                    lerpFirstValue = transform.eulerAngles.x + 360f;
-                }
-                else
-                {
-                    lerpFirstValue = transform.eulerAngles.x;
-                }
-            }
-            else
-            {
-                if (transform.eulerAngles.x < 180f)
-                {
-                    lerpFirstValue = transform.eulerAngles.x;
-                }
-                else
-                {
-                    lerpFirstValue = transform.eulerAngles.x - 360f;
-                }
-            }
-
-            data.x = transform.eulerAngles.x;
-            data.y = hit.transform.eulerAngles.x;
-            data.z = lerpFirstValue;
-
-            transform.eulerAngles = new Vector3(Mathf.Lerp(lerpFirstValue, hit.transform.eulerAngles.x, Mathf.Pow(15f / Mathf.Abs(lerpFirstValue - hit.transform.eulerAngles.x), 2f) * Time.fixedDeltaTime), transform.eulerAngles.y, 0);
-
-            Debug.DrawRay(transform.position, -transform.up * hit.distance, Color.yellow);
-        }
-        else
-            m_isGrounded = false;
+        m_gravityVector += m_malusBuffer;
 
         if (m_isGrounded)
         {
@@ -105,20 +71,54 @@ public class CarController : MonoBehaviour
             CalculateSpeed();
 
             Vector3 movVector = Vector3.Lerp(transform.forward, m_lateralVelocity, m_interpolationVelocity) * m_currentSpeed;
-            m_rigidbody.velocity = movVector + new Vector3(0, m_rigidbody.velocity.y - movVector.y, 0);
-        }
-        else if (m_isDrifting)
-        {
-            ApplyRotation();
-            CalculateDrift();
+            if (!m_isOnRamp)
+                m_gravityVector += -Vector3.up;
 
-            Vector3 movVector = Vector3.Lerp(transform.forward, m_lateralVelocity, m_interpolationVelocity) * m_currentSpeed;
-            m_rigidbody.velocity = movVector + new Vector3(0, m_rigidbody.velocity.y - movVector.y, 0);
+            m_rigidbody.velocity = movVector + m_gravityVector;
+            m_currentGravityFactor = _gravityFactor * 0.5f;
         }
         else
         {
+            m_isDrifting = false;
+            m_driftInput = false;
             Vector3 movVector = transform.forward * m_currentSpeed;
-            m_rigidbody.velocity = movVector + new Vector3(0, m_rigidbody.velocity.y - movVector.y - _gravity, 0);
+            m_currentGravityFactor = Mathf.Lerp(m_currentGravityFactor, _gravityFactor, Time.fixedDeltaTime);
+            m_gravityVector += -m_currentGravityFactor * Vector3.up;
+            m_rigidbody.velocity = movVector + m_gravityVector;
+        }
+    }
+
+    private void AlignToGround()
+    {
+        Debug.DrawRay(transform.position + m_distanceToFloor * transform.up, -transform.up * 1.2f, Color.yellow);
+
+        RaycastHit hit;
+        if (Physics.Raycast(transform.position + m_distanceToFloor * transform.up, -transform.up, out hit, Mathf.Infinity))
+        {
+            m_isGrounded = hit.distance <= 1.2f;
+
+            m_isOnRamp = hit.collider.gameObject.CompareTag("Ramp") && m_isGrounded;
+
+            if (m_isOnRamp)
+            {
+                m_gravityVector -= hit.normal;
+                GetComponent<CapsuleCollider>().height = 0;
+            }
+            else
+            {
+                GetComponent<CapsuleCollider>().height = m_colliderHeightAtStart;
+            }
+
+            Vector3 lookDir = Vector3.Cross(hit.normal, -transform.right);
+            Quaternion lookRotation = Quaternion.LookRotation(lookDir, hit.normal);
+            transform.rotation = Quaternion.Slerp(transform.rotation, lookRotation, Time.fixedDeltaTime * (30 / Quaternion.Angle(transform.rotation, lookRotation)) * (m_isOnRamp ? 5 : 1));
+        }
+        else
+        {
+            m_isGrounded = false;
+            Vector3 lookDir = Vector3.Cross(Vector3.up, -transform.right);
+            Quaternion lookRotation = Quaternion.LookRotation(lookDir, Vector3.up);
+            transform.rotation = Quaternion.Slerp(transform.rotation, lookRotation, Time.fixedDeltaTime * (30 / Quaternion.Angle(transform.rotation, lookRotation)) * (m_isOnRamp ? 5 : 1));
         }
     }
 
@@ -198,7 +198,7 @@ public class CarController : MonoBehaviour
                 if (!m_isDrifting && m_isGrounded)
                 {
                     m_driftState = -1 * Mathf.Sign(m_horizontalAxis);
-                    m_rigidbody.AddForce(transform.up * _maxSpeed * 3);
+//                    m_malusBuffer += transform.up;
                     m_isDrifting = true;
                 }
 
@@ -227,6 +227,41 @@ public class CarController : MonoBehaviour
             _acceleration -= _afterDriftBonusSpeed / _afterDriftBonusDuration;
             yield return new WaitForSeconds(.1f);
         }
+    }
+
+    public void SpeedUp(float p_speedPower, float p_speedDuration)
+    {
+        StartCoroutine(SpeedUpCoroutine(p_speedPower, p_speedDuration));
+    }
+
+    public void HitByMalus(float p_malusPower)
+    {
+        StartCoroutine(HitByMalusCoroutine(p_malusPower));
+    }
+
+    IEnumerator SpeedUpCoroutine(float p_speedPower, float p_speedDuration)
+    {
+        _maxSpeed += p_speedPower;
+        _acceleration += p_speedPower;
+
+        for (int i = 0; i < p_speedDuration; ++i)
+        {
+            _maxSpeed -= p_speedPower / p_speedDuration;
+            _acceleration -= p_speedPower / p_speedDuration;
+            yield return new WaitForSeconds(.1f);
+        }
+    }
+
+    IEnumerator HitByMalusCoroutine(float p_malusPower)
+    {
+        m_currentSpeed = 0.0f;
+        m_isDrifting = false;
+        m_driftInput = false;
+
+        m_malusBuffer += Vector3.up * p_malusPower * 2;
+        yield return new WaitForSeconds(0.5f);
+
+        m_malusBuffer.Set(0, 0, 0);
     }
 
     public bool NoControle { get; set; }

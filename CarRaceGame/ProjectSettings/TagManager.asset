@@ -6,6 +6,7 @@ TagManager:
   tags:
   - Car
   - Ramp
+  - ItemBox
   layers:
   - Default
   - TransparentFX
@@ -16,7 +17,7 @@ TagManager:
   - 
   - 
   - PostProcessing
-  - 
+  - salle
   - 
   - 
   - 

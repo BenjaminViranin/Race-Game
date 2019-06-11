@@ -7,17 +7,31 @@ using PathCreation;
 [RequireComponent(typeof(Rigidbody))]
 public class AiCarController : CarController
 {
-    public PathCreator RoadPath;
-    private EndOfPathInstruction endOfPathInstruction = EndOfPathInstruction.Loop;
+    private PathCreator RoadPath;
+    public EndOfPathInstruction endOfPathInstruction;
 
-    private float distanceTravelled = 4.0f;
+    public Checkpoint currentCheckpoint;
+
+    public int rank;
+    public bool isFinishedTheRace;
+
+    [HideInInspector] public bool isScriptedPath;
+    private float loopRot = 90.0f;
+    bool canStartFollowSP = false;
+    private Vector3 scriptrdPathStartPos;
+    private Quaternion scriptrdPathStartRot;
+    private float scriptrdPathLoopLerpAlpha;
+
+    private RoadPathManager roadPathManager;
+
+    private float distanceTravelled = 3.0f;
     private float targetRange = 10.0f;
     private Transform target;
     private Vector3 oldPosition;
     private float oldDistanceToTarget;
 
     private float editorMaxSpeed;
-    private float aiMaxSpeed = 15.0f;
+    public float aiMaxSpeed = 10.0f;
 
     private float rayLeftHitTimer;
     private float rayRightHitTimer;
@@ -25,16 +39,23 @@ public class AiCarController : CarController
     public float AngleToDrift = 45.0f;
 
     public Transform CarFront;
-    public float FOV_Range = 10.0f;
+    public float FOV_Range = 5.0f;
     public float FOV_Angle = 45.0f;
     private bool fovHasContact;
     private Vector3 obstacleHitPoint;
     private bool isManagingTurn;
 
+    public float timeStuck;
+    private Vector3 oldPositionForStuck;
+
     public float angleCarForward_TargetForward;
 
     void Start()
     {
+        roadPathManager = GameObject.Find("Road Path Manager").GetComponent<RoadPathManager>();
+
+        RoadPath = roadPathManager.GetFirstRoadPath();
+
         oldPosition = transform.position;
 
         editorMaxSpeed = _maxSpeed;
@@ -46,15 +67,105 @@ public class AiCarController : CarController
         base.Start();
     }
 
-    void Update()
+    void RespawnToCheckpoint()
     {
-        if (!ManageObstacle())
-            FollowTarget();
+        if (transform.position.y <= -1 || timeStuck >= 4.0f)
+        {
+            transform.position = currentCheckpoint.gameObject.transform.position;
+            m_rigidbody.velocity = Vector3.zero;
+            m_currentSpeed = 0;
+            m_verticalAxis = 0;
+            m_horizontalAxis = 0;
+            timeStuck = 0.0f;
+        }
+
+        int oldX = (int)oldPositionForStuck.x;
+        int oldY =(int)oldPositionForStuck.y;
+        int oldZ =(int)oldPositionForStuck.z;
+        int X = (int)transform.position.x;
+        int Y = (int)transform.position.y;
+        int Z = (int)transform.position.z;
+
+        if (oldX == X && oldY == Y && oldZ == Z)
+            timeStuck += Time.deltaTime;
         else
         {
-            // Debug
-            Debug.DrawLine(new Vector3(target.position.x - 1, target.position.y, target.position.z), new Vector3(target.position.x + 1, target.position.y, target.position.z), Color.red);
-            Debug.DrawLine(new Vector3(target.position.x, target.position.y, target.position.z - 1), new Vector3(target.position.x, target.position.y, target.position.z + 1), Color.red);
+            timeStuck = 0.0f;
+        }
+    }
+
+    void Update()
+    {
+        if (RoadPath.name != roadPathManager.roadPath_final.name)
+            SwitchRoadPath();
+
+        if (!isScriptedPath)
+        {
+            if (!ManageObstacle())
+                FollowTarget();
+        }
+        else
+            FollowPath();
+
+        RespawnToCheckpoint();
+
+        oldPositionForStuck = transform.position;
+
+
+        // Debug
+        Debug.DrawLine(new Vector3(target.position.x - 1, target.position.y, target.position.z),
+            new Vector3(target.position.x + 1, target.position.y, target.position.z), Color.red);
+        Debug.DrawLine(new Vector3(target.position.x, target.position.y, target.position.z - 1),
+            new Vector3(target.position.x, target.position.y, target.position.z + 1), Color.red);
+    }
+
+    void FollowPath()
+    {
+        if (scriptrdPathLoopLerpAlpha == 0.0f)
+        {
+            scriptrdPathStartPos = transform.position;
+            scriptrdPathStartRot = transform.rotation;
+        }
+        else if (scriptrdPathLoopLerpAlpha >= 1)
+            canStartFollowSP = true;
+
+        if (!canStartFollowSP)
+        {
+            Vector3 tempPos = Vector3.Lerp(scriptrdPathStartPos, RoadPath.StartPosition, scriptrdPathLoopLerpAlpha);
+            transform.position = new Vector3(tempPos.x, transform.position.y, tempPos.z);
+
+            transform.rotation = Quaternion.Slerp(scriptrdPathStartRot, RoadPath.StartRotation, scriptrdPathLoopLerpAlpha);
+
+            scriptrdPathLoopLerpAlpha += 2.8f * Time.deltaTime;
+        }
+        else
+        {
+            distanceTravelled += (m_currentSpeed + 2) * Time.deltaTime;
+            Vector3 pos = RoadPath.path.GetPointAtDistance(distanceTravelled, endOfPathInstruction);
+            Quaternion rot = RoadPath.path.GetRotationAtDistance(distanceTravelled, endOfPathInstruction);
+
+            transform.position = pos;
+            transform.rotation = rot;
+
+            if (distanceTravelled <= RoadPath.path.length / 2)
+                transform.Rotate(0, 0, loopRot);
+            else
+            {
+                transform.Rotate(0, 0, loopRot);
+                loopRot -= loopRot > 0 ? loopRot - 1 * Time.deltaTime : 0;
+            }
+        }
+
+        oldPosition = transform.position;
+    }
+
+    void SwitchRoadPath()
+    {
+        if (distanceTravelled >= RoadPath.path.length)
+        {
+            RoadPath = roadPathManager.GetNextRoadPath(RoadPath);
+            isScriptedPath = RoadPath.IsSripted;
+            distanceTravelled = 0.0f;
         }
     }
 
@@ -67,7 +178,7 @@ public class AiCarController : CarController
 
         oldPosition = transform.position;
         target.position = RoadPath.path.GetPointAtDistance(distanceTravelled, endOfPathInstruction);
-        
+
         // Calculate Target Rotation
         target.rotation = RoadPath.path.GetRotationAtDistance(distanceTravelled, endOfPathInstruction);
         angleCarForward_TargetForward = Vector3.Angle(CarFront.forward, target.forward);
@@ -118,7 +229,7 @@ public class AiCarController : CarController
         bool rayTargetHasHit = Physics.Raycast(CarFront.position, targetDirection, out rayTargetHit, targetDistance + FOV_Range);
         if (Vector3.Angle(rayFront, targetDirection) > 40.0f || targetDistance > targetRange * 1.5f)
             rayTargetHasHit = false;
-
+        
         // FOV check
         if (!fovHasContact)
         {
@@ -154,16 +265,16 @@ public class AiCarController : CarController
             if (rayTargetHasHit) Debug.DrawRay(CarFront.position, targetDirection * (FOV_Range + targetDistance) , Color.green);
 
             // If there is e Straight line -> Go Faster
-            RaycastHit rayInfiniteFrontHit;
-            Physics.Raycast(CarFront.position, rayFront, out rayInfiniteFrontHit, Mathf.Infinity);
-            if (rayInfiniteFrontHit.distance >= FOV_Range * 3 && angleCarForward_TargetForward <= 4.0f)
-            {
-                _maxSpeed = editorMaxSpeed;
-                // Debug
-                Debug.DrawRay(CarFront.position, rayFront * (FOV_Range * 3), Color.magenta);
-            }
-            else
-                _maxSpeed = aiMaxSpeed;
+            //RaycastHit rayInfiniteFrontHit;
+            //Physics.Raycast(CarFront.position, rayFront, out rayInfiniteFrontHit, Mathf.Infinity);
+            //if (rayInfiniteFrontHit.distance >= FOV_Range * 3 && angleCarForward_TargetForward <= 4.0f)
+            //{
+            //    _maxSpeed = editorMaxSpeed;
+            //    // Debug
+            //    Debug.DrawRay(CarFront.position, rayFront * (FOV_Range * 3), Color.magenta);
+            //}
+            //else
+            //    _maxSpeed = aiMaxSpeed;
 
             // If obstacle close -> Turn
             bool tempLeftHit = Physics.Raycast(CarFront.position, rayLeft, out rayLeftHit, FOV_Range);
@@ -233,5 +344,14 @@ public class AiCarController : CarController
 
             return false;
         }
+    }
+
+    void OnTriggerEnter(Collider other)
+    {
+        if (other.gameObject.tag == "Respawn")
+        {
+            currentCheckpoint = other.gameObject.GetComponent<Checkpoint>();
+        }
+        
     }
 }

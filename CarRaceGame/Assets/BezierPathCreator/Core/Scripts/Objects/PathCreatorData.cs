@@ -8,6 +8,8 @@ namespace PathCreation
     [System.Serializable]
     public class PathCreatorData
     {
+        public string Name;
+
         public event System.Action bezierOrVertexPathModified;
         public event System.Action bezierCreated;
 
